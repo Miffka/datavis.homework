@@ -49,7 +49,7 @@ loadData().then(data => {
 
     colorScale.domain(d3.set(data.map(d=>d.region)).values());
 
-    d3.select('#range').on('change', function(){ 
+    d3.select('#range').on('input', function(){ 
         year = d3.select(this).property('value');
         yearLable.html(year);
         updateScattePlot();
@@ -81,6 +81,29 @@ loadData().then(data => {
     }
 
     function updateScattePlot(){
+
+        let x_axis_values = data.map(d => parseFloat(d[xParam][year]) || 0);
+        let y_axis_values = data.map(d => parseFloat(d[yParam][year]) || 0);
+        let radius_values = data.map(d => parseFloat(d[rParam][year]) || 0);
+
+        x.domain([d3.min(x_axis_values), d3.max(x_axis_values)]);
+        y.domain([d3.min(y_axis_values), d3.max(y_axis_values)]);
+        radiusScale.domain([d3.min(radius_values), d3.max(radius_values)]);
+
+        xAxis.call(d3.axisBottom(x));
+        yAxis.call(d3.axisLeft(y));
+
+        scatterPlot.selectAll("circle").remove();
+
+        scatterPlot.selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+                .attr("cx", d => x(d[xParam][year]))
+                .attr("cy", d => y(d[yParam][year]))
+                .attr("r", d => radiusScale(d[rParam][year]))
+                .attr("fill", d => colorScale(d["region"]))
+
         return;
     }
 
