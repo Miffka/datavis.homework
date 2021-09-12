@@ -77,6 +77,36 @@ loadData().then(data => {
     });
 
     function updateBar(){
+
+        let region_names = d3.set(data.map(d=>d.region)).values();
+
+        var region_and_mean_dict = [];
+        region_names.forEach(function(region_name){
+          values_for_region = data.filter(function(d){return d.region == region_name;});
+          region_and_mean_dict.push({
+              "region": region_name, 
+              "mean_value": d3.mean(values_for_region, d => d[param][year])
+            });
+        });
+
+        xBar.domain(region_names);
+        yBar.domain([0, d3.max(region_and_mean_dict.map(d => d.mean_value))])
+
+        xBarAxis.call(d3.axisBottom(xBar));
+        yBarAxis.call(d3.axisLeft(yBar));
+
+        barChart.selectAll("rect").remove();
+
+        barChart.selectAll("rect")
+            .data(region_and_mean_dict)
+            .enter()
+            .append("rect")
+                .attr("x", d => xBar(d.region))
+                .attr("y", d => yBar(d.mean_value))
+                .attr("width", xBar.bandwidth())
+                .attr("height", d => height - margin - yBar(d.mean_value))
+                .attr("fill", d => colorScale(d.region))
+
         return;
     }
 
