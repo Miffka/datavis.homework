@@ -107,6 +107,18 @@ loadData().then(data => {
                 .attr("height", d => height - margin - yBar(d.mean_value))
                 .attr("fill", d => colorScale(d.region))
 
+        barChart.selectAll("rect").on("click", function(clicked_region) {
+
+            d3.selectAll("rect")
+                .transition()
+                .style("opacity", d => d.region == clicked_region.region ? 1.0 : 0.3)
+
+            d3.selectAll("circle")
+                .transition()
+                .style("opacity", d => d.region == clicked_region.region ? 1.0 : 0.0)
+
+        })
+
         return;
     }
 
