@@ -76,6 +76,11 @@ loadData().then(data => {
         updateBar();
     });
 
+    d3.select('#p').on('change', function(){ 
+        lineParam = d3.select(this).property('value');
+        updateLinePlot();
+    });
+
     function updateBar(){
 
         let region_names = d3.set(data.map(d=>d.region)).values();
@@ -105,19 +110,21 @@ loadData().then(data => {
                 .attr("y", d => yBar(d.mean_value))
                 .attr("width", xBar.bandwidth())
                 .attr("height", d => height - margin - yBar(d.mean_value))
-                .attr("fill", d => colorScale(d.region))
+                .attr("fill", d => colorScale(d.region));
 
-        barChart.selectAll("rect").on("click", function(clicked_region) {
+        barChart.selectAll("rect").on("click", function(clicked_bar) {
+
+            highlighted = clicked_bar.region;
 
             d3.selectAll("rect")
                 .transition()
-                .style("opacity", d => d.region == clicked_region.region ? 1.0 : 0.3)
+                .style("opacity", d => d.region == highlighted ? 1.0 : 0.3);
 
             d3.selectAll("circle")
                 .transition()
-                .style("opacity", d => d.region == clicked_region.region ? 1.0 : 0.0)
+                .style("opacity", d => d.region == highlighted ? 1.0 : 0.0);
 
-        })
+        });
 
         return;
     }
@@ -146,11 +153,65 @@ loadData().then(data => {
                 .attr("r", d => radiusScale(d[rParam][year]))
                 .attr("fill", d => colorScale(d["region"]))
 
+        scatterPlot.selectAll("circle").on("click", function(clicked_circle) {
+
+            selected = clicked_circle.country;
+
+            d3.selectAll("circle")
+                .transition()
+                .attr("stroke-width", d => d.country == selected ? 3.0 : 1.0);
+
+            updateLinePlot();
+        })
+
+        return;
+    }
+
+    function updateLinePlot() {
+
+        if (selected != "") {
+
+            d3.select(".country-name").text(selected);
+
+            const country_index = data.findIndex(d => d.country === selected);
+            if (country_index === -1) return;
+
+            var data_for_selected = data[country_index][lineParam];
+
+            let year_value_list = [];
+            for (let currentYear = 1800; currentYear < 2021; currentYear++) {
+                year_value_list.push({"year": currentYear, "param_value": parseFloat(data_for_selected[currentYear]) || 0});
+            };
+
+            let xRange = d3.values(year_value_list).map(d => d["year"]);
+            let yRange = d3.values(year_value_list).map(d => d["param_value"]);
+
+            x.domain([d3.min(xRange), d3.max(xRange)]);
+            y.domain([d3.min(yRange) * 0.9, d3.max(yRange) * 1.1]);
+
+            xLineAxis.call(d3.axisBottom(x));
+            yLineAxis.call(d3.axisLeft(y));
+
+            lineChart.select(".lineData").remove();
+
+            lineChart.append("path")
+                .datum(year_value_list)
+                .attr("class", "lineData")
+                .attr("fill", "none")
+                .attr("stroke", "#FFA500")
+                .attr("stroke-width", 3.0)
+                .attr("d", d3.line()
+                    .x(d => x(d["year"]))
+                    .y(d => y(d["param_value"]))
+                    );
+        }
+
         return;
     }
 
     updateBar();
     updateScattePlot();
+    updateLinePlot();
 });
 
 
